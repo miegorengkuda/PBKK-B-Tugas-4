@@ -1,36 +1,28 @@
 <?php
 
+use App\Http\Controllers\PageController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Tugas 2 PBKK - Laravel Local Sandbox: Routing & Named Routes
+| PBKK — Tugas 2 & 4
 |--------------------------------------------------------------------------
 |
-| Rute Home, Route Grouping (prefix: dashboard), dan Fallback Route.
-| Seluruh rute menggunakan named routes.
+| Tugas 2: Route Grouping, Parameter Validation, Named Routes.
+| Tugas 4: Multi-View Profil Akademik, Blade Components, Vite.
 |
 */
 
 // ──────────────────────────────────────────────
-// Rute Home
+// Tugas 4 — Halaman utama via Controller
 // ──────────────────────────────────────────────
-Route::get('/', function () {
-    $profil = [
-        'nama'      => 'Dafa Kumara Sahasika',
-        'nrp'       => '5025241112',
-        'jurusan'   => 'Teknik Informatika',
-        'fakultas'  => 'Fakultas Teknologi Elektro dan Informatika Cerdas',
-        'kampus'    => 'Institut Teknologi Sepuluh Nopember (ITS)',
-        'angkatan'  => 2024,
-        'semester'  => 5,
-    ];
-
-    return view('home', compact('profil'));
-})->name('home');
+Route::get('/', [PageController::class, 'home'])->name('home');
+Route::get('/profil-mahasiswa', [PageController::class, 'profile'])->name('profile');
+Route::get('/ide-agent', [PageController::class, 'agent'])->name('agent');
 
 // ──────────────────────────────────────────────
-// Route Grouping — Prefix "dashboard"
+// Tugas 2 — Route Grouping (Prefix "dashboard")
+// Dipertahankan apa adanya dari tugas sebelumnya.
 // ──────────────────────────────────────────────
 Route::prefix('dashboard')->group(function () {
 
@@ -73,10 +65,16 @@ Route::prefix('dashboard')->group(function () {
         return view('dashboard.agent', compact('tema', 'idea'));
     })->name('agent.idea');
 
-    // 3) Kalkulator IPK (dua IP semester, menerima float)
+    // 3) Kalkulator IPK (dua IP semester, menerima float 0.00 – 4.00)
     Route::get('/hitung-ipk/{ip1}/{ip2}', function (string $ip1, string $ip2) {
-        $ip1   = (float) $ip1;
-        $ip2   = (float) $ip2;
+        $ip1 = (float) $ip1;
+        $ip2 = (float) $ip2;
+
+        // Validasi rentang 0 – 4
+        if ($ip1 < 0 || $ip1 > 4 || $ip2 < 0 || $ip2 > 4) {
+            abort(404, 'IP harus berada dalam rentang 0.00 – 4.00');
+        }
+
         $total = $ip1 + $ip2;
         $rata  = $total / 2;
 
@@ -90,7 +88,7 @@ Route::prefix('dashboard')->group(function () {
         };
 
         return view('dashboard.ipk', compact('ip1', 'ip2', 'total', 'rata', 'predikat'));
-    })->where(['ip1' => '[0-9]+(\.[0-9]+)?', 'ip2' => '[0-9]+(\.[0-9]+)?'])
+    })->where(['ip1' => '[0-3](\.[0-9]+)?|4(\.0+)?', 'ip2' => '[0-3](\.[0-9]+)?|4(\.0+)?'])
       ->name('ipk.kalkulator');
 
 });
